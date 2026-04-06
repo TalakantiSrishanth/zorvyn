@@ -1,103 +1,55 @@
 # FinTrack Backend
 
-A simple Node.js + Express backend for a finance dashboard.
-It manages financial records, basic user roles, and provides some aggregated data for a dashboard view.
+Hey! This is the backend for the FinTrack dashboard. I built it using Node.js and Express. 
 
-Nothing overcomplicated — just focused on getting the core backend logic working cleanly.
-
----
+The main focus here was getting the core business logic, role-based access control (RBAC), and data aggregations working cleanly without over-engineering the architecture.
 
 ## Tech Stack
-
+Just the basics:
 * Node.js
 * Express.js
-* MongoDB (Mongoose)
+* MongoDB (via Mongoose)
 
----
-
-## Running the Project
-
-1. Make sure MongoDB is running locally (or update `MONGO_URI` if you're using Atlas).
-2. Install dependencies:
-
-   ```
+## How to run it
+1. Make sure you have MongoDB running locally. (If you prefer cloud, just swap out the `MONGO_URI` in `server.js` with your Atlas connection string).
+2. Install the dependencies:
+   ```bash
    npm install
    ```
-3. Start the server:
-
-   ```
+3. Spin up the server:
+   ```bash
    node server.js
    ```
+   *(Feel free to use `nodemon` if you're making edits).*
 
-   (or use nodemon if you prefer)
+## Authentication (Mocked)
+I intentionally skipped wiring up a full JWT/bcrypt flow so I could focus entirely on the RBAC and core logic. 
 
----
-
-## Authentication (Mock)
-
-Authentication is kept simple on purpose.
-
-Instead of setting up JWT, I used a custom header:
-
+To simulate a logged-in user, I set up a custom middleware. Just pass this in your request headers:
+```text
+x-user-id: <valid_mongodb_user_id>
 ```
-x-user-id
-```
+The app will grab that ID, look up the user's role, and apply the correct permissions.
 
-Just pass a valid user ID from the database in the header to simulate a logged-in user.
-
----
-
-## APIs
+## API Overview
 
 ### Records (`/api/records`)
-
-* `GET /`
-  Fetch records (supports filters like `?type=income&category=Salary`)
-  Roles: viewer, analyst, admin
-
-* `POST /`
-  Create a new record
-  Roles: analyst, admin
-
-* `DELETE /:id`
-  Delete a record
-  Roles: admin
-
----
+* `GET /` - Grabs the financial records. You can filter the results using query params (e.g., `?type=income&category=Salary`). 
+  * *Access: viewer, analyst, admin*
+* `POST /` - Creates a new record. 
+  * *Access: analyst, admin*
+* `DELETE /:id` - Drops a record from the database. 
+  * *Access: admin only*
 
 ### Dashboard (`/api/dashboard`)
+* `GET /summary` - Does the heavy lifting for the frontend analytics. It returns total income, total expenses, net balance, category breakdowns, and a list of recent transactions.
+  * *Access: analyst, admin*
 
-* `GET /summary`
-  Returns:
+## Design Decisions & Assumptions
 
-  * total income
-  * total expenses
-  * net balance
-  * category breakdown
-  * recent transactions
+* **No Service Layer:** I kept the business logic directly inside the controllers. For a project of this size, adding a dedicated service layer usually just means passing data back and forth for no real benefit.
+* **Pagination:** I put a hard limit on the record fetching just to prevent dumping the entire database into a single response. If this were a production app, I'd implement proper cursor-based pagination.
+* **Validation:** I stuck to basic manual `if/else` checks for the incoming request bodies. Pulling in a heavy validation library like Joi or Zod felt like overkill for these specific endpoints.
 
-  Roles: analyst, admin
-
----
-
-## Notes / Assumptions
-
-* **Auth is mocked**
-  Didn’t implement full JWT flow to keep focus on RBAC and core logic.
-
-* **No service layer**
-  For this size of project, keeping logic in controllers felt simpler and easier to follow.
-
-* **Pagination**
-  Currently limiting results to avoid large responses.
-  Proper pagination can be added later if needed.
-
-* **Validation**
-  Used basic manual checks instead of adding extra libraries.
-
----
-
-## Final Thoughts
-
-The goal here was to keep things simple but structured —
-not production-level, but clean enough to show backend design, RBAC, and data handling.
+## Wrap up
+The goal here wasn't to build a fully production-ready system, but rather to show how I approach backend structure, data handling, and access control in a clean and readable way. Hope it makes sense!
